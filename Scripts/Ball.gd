@@ -20,8 +20,17 @@ func _ready():
 	contact_monitor = true
 	set_max_contacts_reported(4)
 	_start_position = $ColorRect.rect_position
-	_start_size = $ColorRect.get_transform().size
 	_normal_color = $ColorRect.color
+
+func _process(delta):
+	if _trauma > 0:
+		_decay_trauma(delta)
+		_apply_shake()
+	if _color > 0:
+		_decay_color(delta)
+		_apply_shake()
+	if _color == 0 and $ColorRect.color != _normal_color:
+		$ColorRect.color = _normal_color
 
 func _physics_process(delta):
 	# Check for collisions
@@ -29,8 +38,10 @@ func _physics_process(delta):
 	for body in bodies:
 		if body.is_in_group("Tiles"):
 			Game.change_score(body.points)
-			body.queue_free()
-	
+			add_color(1.0)
+			body.kill()
+		add_trauma(2.0)
+		
 	if position.y > get_viewport().size.y:
 		Game.change_lives(-1)
 		Starting.startCountdown(3)
@@ -43,6 +54,9 @@ func _apply_color(delta):
 	var a = min(1,_color)
 	$ColorRect.color = _normal_color.linear_interpolation(trauma_color, a)
 		
+func _decay_color(delta):
+	var change = _color_decay + delta
+	_color = max(_color - change, 0)
 
 func add_trauma(amount):
 	_trauma = min(_trauma + amount, 1)
